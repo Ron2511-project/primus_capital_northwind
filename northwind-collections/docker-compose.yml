@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-northwind}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-northwind_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-northwind_collections}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # pg_isready sin -d usa una DB con el mismo nombre que el usuario ("northwind"), que no existe
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "${API_PORT:-8080}:8080"
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-northwind}:${POSTGRES_PASSWORD:-northwind_secret}@postgres:5432/${POSTGRES_DB:-northwind_collections}?sslmode=disable
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      SEED_ON_START: ${SEED_ON_START:-true}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:

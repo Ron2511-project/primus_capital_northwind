@@ -1,0 +1,56 @@
+// Northwind Collections - Modelo de datos
+// Visualizar en https://dbdiagram.io
+
+Enum customer_segment {
+  enterprise
+  startup
+  standard
+  zombie
+}
+
+Enum invoice_status {
+  pending
+  paid
+  overdue
+  partial
+}
+
+Enum action_type {
+  call
+  email_reminder
+  note
+  promise_to_pay
+  escalation
+  snooze
+}
+
+Table customers {
+  id uuid [pk]
+  name varchar
+  segment customer_segment
+  payment_terms_days int
+  monthly_mrr decimal
+  contact_email varchar
+  is_active boolean
+  created_at timestamptz
+}
+
+Table invoices {
+  id uuid [pk]
+  customer_id uuid [ref: > customers.id]
+  invoice_number varchar [unique]
+  amount decimal
+  due_date date
+  paid_at timestamptz
+  status invoice_status
+  created_at timestamptz
+}
+
+Table collection_actions {
+  id uuid [pk]
+  customer_id uuid [ref: > customers.id]
+  action_type action_type
+  notes text
+  created_by varchar
+  created_at timestamptz
+}

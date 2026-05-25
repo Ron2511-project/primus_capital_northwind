@@ -1,0 +1,83 @@
+openapi: 3.0.3
+info:
+  title: Northwind Collections API
+  description: API de cobranza priorizada para el equipo de finanzas (MVP prueba técnica)
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Docker / local (API_PORT=8080)
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+  /api/v1/dashboard/summary:
+    get:
+      summary: Resumen del dashboard de cobranza
+      responses:
+        "200":
+          description: Métricas agregadas
+  /api/v1/collection-queue:
+    get:
+      summary: Cola de cobranza priorizada
+      parameters:
+        - name: segment
+          in: query
+          schema:
+            type: string
+            enum: [enterprise, startup, standard, zombie]
+        - name: priority
+          in: query
+          schema:
+            type: string
+            enum: [critical, high, medium, low, monitor]
+      responses:
+        "200":
+          description: Lista ordenada por score de prioridad
+  /api/v1/customers/{id}:
+    get:
+      summary: Detalle de cliente con facturas y acciones
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Detalle completo
+        "404":
+          description: No encontrado
+  /api/v1/customers/{id}/actions:
+    post:
+      summary: Registrar acción de cobranza
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action_type]
+              properties:
+                action_type:
+                  type: string
+                  enum: [call, email_reminder, note, promise_to_pay, escalation, snooze]
+                notes:
+                  type: string
+                created_by:
+                  type: string
+      responses:
+        "201":
+          description: Acción creada
+        "400":
+          description: Validación fallida
